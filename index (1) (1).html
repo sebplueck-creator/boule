@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boule – Gruppen & Ergebnisse</title>
+
+<style>
+  :root {
+    --tsv-blue: #003366;
+    --tsv-lightblue: #0066cc;
+    --tsv-grey: #f2f2f2;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    margin: 10px;
+    background: #f7f7f7;
+    color: #222;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  h1, h2 {
+    text-align: center;
+    color: var(--tsv-blue);
+    margin-top: 25px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    margin-bottom: 25px;
+    padding: 5px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+  }
+
+  th {
+    background: var(--tsv-blue);
+    color: #fff;
+    padding: 6px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #ddd;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  input {
+    width: 70px;
+    padding: 4px;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  button {
+    padding: 5px 10px;
+    background: var(--tsv-lightblue);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  button:hover {
+    background: #004c99;
+  }
+
+  .group-table th {
+    background: var(--tsv-lightblue);
+  }
+
+  .rank-1 { background: #ffeaa7; font-weight: bold; }
+  .rank-2 { background: #dfe6e9; font-weight: bold; }
+  .rank-3 { background: #fab1a0; font-weight: bold; }
+
+  .ko-round {
+    font-weight: bold;
+    color: var(--tsv-blue);
+  }
+
+  .ko-final {
+    background: #fff3bf !important;
+    font-weight: bold;
+  }
+
+  .table-wrapper table tr:nth-child(even) {
+    background: var(--tsv-grey);
+  }
+
+  @media print {
+    body { background: white; color: black; margin: 0; padding: 0; }
+    input, button,
+    #matches-table th:nth-child(5),
+    #matches-table td:nth-child(5) { display: none !important; }
+    .table-wrapper { box-shadow: none !important; background: white !important; }
+    th { background: #ddd !important; color: black !important; }
+    table { border: 1px solid #000; font-size: 12px; }
+    td, th { border: 1px solid #000 !important; padding: 4px 6px; }
+    .group-table { page-break-inside: avoid; margin-bottom: 25px; }
+    #table-overall { page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Boule – Gruppen & Ergebnisse</h1>
+
+<div class="table-wrapper">
+  <table id="matches-table">
+    <thead>
+      <tr>
+        <th>Gruppe</th>
+        <th>Spieler A</th>
+        <th>Spieler B</th>
+        <th>Ergebnis</th>
+        <th>Speichern</th>
+      </tr>
+    </thead>
+    <tbody id="matches-body"></tbody>
+  </table>
+</div>
+
+<h2>Gruppenwertungen</h2>
+
+<div class="table-wrapper">
+  <table class="group-table" id="table-g1">
+    <thead>
+      <tr>
+        <th>Spieler</th><th>Spiele</th><th>Siege</th><th>Niederl.</th><th>Punkte</th><th>Differenz</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="table-wrapper">
+  <table class="group-table" id="table-g2">
+    <thead>
+      <tr>
+        <th>Spieler</th><th>Spiele</th><th>Siege</th><th>Niederl.</th><th>Punkte</th><th>Differenz</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="table-wrapper">
+  <table class="group-table" id="table-g3">
+    <thead>
+      <tr>
+        <th>Spieler</th><th>Spiele</th><th>Siege</th><th>Niederl.</th><th>Punkte</th><th>Differenz</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="table-wrapper">
+  <table class="group-table" id="table-g4">
+    <thead>
+      <tr>
+        <th>Spieler</th><th>Spiele</th><th>Siege</th><th>Niederl.</th><th>Punkte</th><th>Differenz</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<h2>Gesamtrangliste</h2>
+
+<div class="table-wrapper">
+  <table id="table-overall-wrapper">
+    <thead>
+      <tr>
+        <th>Rang</th><th>Spieler</th><th>Gruppe</th><th>Spiele</th><th>Siege</th><th>Niederl.</th><th>Differenz</th>
+      </tr>
+    </thead>
+    <tbody id="table-overall"></tbody>
+  </table>
+</div>
+
+<h2>KO‑Runde</h2>
+
+<div class="table-wrapper">
+  <table id="ko-table">
+    <thead>
+      <tr>
+        <th>Runde</th>
+        <th>Spieler A</th>
+        <th>Spieler B</th>
+        <th>Ergebnis</th>
+        <th>Speichern</th>
+      </tr>
+    </thead>
+    <tbody id="ko-body">
+      <tr>
+        <td class="ko-round">Halbfinale 1</td>
+        <td id="hf1-a">–</td>
+        <td id="hf1-b">–</td>
+        <td><input id="hf1" placeholder="13:8" inputmode="numeric"></td>
+        <td><button onclick="saveKOResult('hf1', 52)">Speichern</button></td>
+      </tr>
+      <tr>
+        <td class="ko-round">Halbfinale 2</td>
+        <td id="hf2-a">–</td>
+        <td id="hf2-b">–</td>
+        <td><input id="hf2" placeholder="13:8" inputmode="numeric"></td>
+        <td><button onclick="saveKOResult('hf2', 53)">Speichern</button></td>
+      </tr>
+      <tr class="ko-final">
+        <td class="ko-round">Finale</td>
+        <td id="final-a">–</td>
+        <td id="final-b">–</td>
+        <td><input id="final" placeholder="13:8" inputmode="numeric"></td>
+        <td><button onclick="saveKOResult('final', 54)">Speichern</button></td>
+      </tr>
+      <tr>
+        <td class="ko-round">Spiel um Platz 3</td>
+        <td id="small-a">–</td>
+        <td id="small-b">–</td>
+        <td><input id="small" placeholder="13:8" inputmode="numeric"></td>
+        <td><button onclick="saveKOResult('small', 55)">Speichern</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyfqJUaCNFTwlH1KiWSya4tDamOdRuk37iPmWa0lZqfVa-bBdR2pN41a95t-3no34g/exec";
+
+const matches = [
+  // Gruppe 1
+  { g:"g1", a:"Claudia", b:"Sebastian" },
+  { g:"g1", a:"Claudia", b:"Michael" },
+  { g:"g1", a:"Claudia", b:"Günter" },
+  { g:"g1", a:"Claudia", b:"Erwin" },
+  { g:"g1", a:"Claudia", b:"Martin" },
+
+  { g:"g1", a:"Sebastian", b:"Michael" },
+  { g:"g1", a:"Sebastian", b:"Günter" },
+  { g:"g1", a:"Sebastian", b:"Erwin" },
+  { g:"g1", a:"Sebastian", b:"Martin" },
+
+  { g:"g1", a:"Michael", b:"Günter" },
+  { g:"g1", a:"Michael", b:"Erwin" },
+  { g:"g1", a:"Michael", b:"Martin" },
+
+  { g:"g1", a:"Günter", b:"Erwin" },
+  { g:"g1", a:"Günter", b:"Martin" },
+
+  { g:"g1", a:"Erwin", b:"Martin" },
+
+  // Gruppe 2
+  { g:"g2", a:"Joachim F", b:"Helmut" },
+  { g:"g2", a:"Joachim F", b:"Peter" },
+  { g:"g2", a:"Joachim F", b:"Elfriede" },
+  { g:"g2", a:"Joachim F", b:"Andreas" },
+  { g:"g2", a:"Joachim F", b:"Martina" },
+
+  { g:"g2", a:"Helmut", b:"Peter" },
+  { g:"g2", a:"Helmut", b:"Elfriede" },
+  { g:"g2", a:"Helmut", b:"Andreas" },
+  { g:"g2", a:"Helmut", b:"Martina" },
+
+  { g:"g2", a:"Peter", b:"Elfriede" },
+  { g:"g2", a:"Peter", b:"Andreas" },
+  { g:"g2", a:"Peter", b:"Martina" },
+
+  { g:"g2", a:"Elfriede", b:"Andreas" },
+  { g:"g2", a:"Elfriede", b:"Martina" },
+
+  { g:"g2", a:"Andreas", b:"Martina" },
+
+  // Gruppe 3
+  { g:"g3", a:"Angelika", b:"Joachim" },
+  { g:"g3", a:"Angelika", b:"Sylvia" },
+  { g:"g3", a:"Angelika", b:"Matthias" },
+  { g:"g3", a:"Angelika", b:"Frank" },
+
+  { g:"g3", a:"Joachim", b:"Sylvia" },
+  { g:"g3", a:"Joachim", b:"Matthias" },
+  { g:"g3", a:"Joachim", b:"Frank" },
+
+  { g:"g3", a:"Sylvia", b:"Matthias" },
+  { g:"g3", a:"Sylvia", b:"Frank" },
+
+  { g:"g3", a:"Matthias", b:"Frank" },
+
+  // Gruppe 4
+  { g:"g4", a:"Christa", b:"Marion" },
+  { g:"g4", a:"Christa", b:"Jennifer" },
+  { g:"g4", a:"Christa", b:"Klaus" },
+  { g:"g4", a:"Christa", b:"Albert" },
+
+  { g:"g4", a:"Marion", b:"Jennifer" },
+  { g:"g4", a:"Marion", b:"Klaus" },
+  { g:"g4", a:"Marion", b:"Albert" },
+
+  { g:"g4", a:"Jennifer", b:"Klaus" },
+  { g:"g4", a:"Jennifer", b:"Albert" },
+
+  { g:"g4", a:"Klaus", b:"Albert" }
+];
+
+function buildMatchesTable() {
+  const tbody = document.getElementById("matches-body");
+  tbody.innerHTML = "";
+  matches.forEach((m, i) => {
+    tbody.innerHTML += `
+      <tr>
+        <td>${m.g}</td>
+        <td>${m.a}</td>
+        <td>${m.b}</td>
+        <td><input id="result-${i}" placeholder=""></td>
+        <td><button onclick="saveResult(${i})">Speichern</button></td>
+      </tr>`;
+  });
+}
+
+async function loadResults() {
+  const url = "https://sheets.googleapis.com/v4/spreadsheets/1MDjsyAaUWqPwxa6WYdlUnFiI5OgimJZCT-n5cJvTHNo/values/boule!A:D?key=AIzaSyD1Kx5ecIL9w9EgtR1DGYGic0jHsM2SMcM";
+  const res = await fetch(url);
+  if (!res.ok) return;
+
+  const data = await res.json();
+  const rows = data.values || [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const result = rows[i][3] || "";
+    const input = document.getElementById(`result-${i-1}`);
+    if (input) input.value = result;
+  }
+
+  const koRows = {
+    hf1: 52,
+    hf2: 53,
+    final: 54,
+    small: 55
+  };
+
+  Object.entries(koRows).forEach(([id, sheetRow]) => {
+    const input = document.getElementById(id);
+    const result = rows[sheetRow - 1]?.[3] || "";
+    if (input) input.value = result;
+  });
+}
+
+async function saveResult(index) {
+  const input = document.getElementById(`result-${index}`);
+  const value = input.value.trim();
+  if (!value) {
+    alert("Bitte Ergebnis eintragen.");
+    return;
+  }
+
+  const row = index + 2;
+
+  const formData = new FormData();
+  formData.append("row", row);
+  formData.append("value", value);
+
+  const response = await fetch(SCRIPT_URL, {
+    method: "POST",
+    body: formData
+  });
+
+  if (response.ok) {
+    input.style.backgroundColor = "#c8f7c5";
+    setTimeout(() => input.style.backgroundColor = "", 800);
+    recomputeStandings();
+  } else {
+    alert("Fehler beim Speichern");
+  }
+}
+
+async function saveKOResult(inputId, row) {
+  const input = document.getElementById(inputId);
+  const value = input.value.trim();
+  const score = parseScore(value);
+
+  if (!score || score.a === score.b) {
+    alert("Bitte ein eindeutiges Ergebnis eintragen, zum Beispiel 13:8.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("row", row);
+  formData.append("value", value);
+
+  const response = await fetch(SCRIPT_URL, {
+    method: "POST",
+    body: formData
+  });
+
+  if (response.ok) {
+    input.style.backgroundColor = "#c8f7c5";
+    setTimeout(() => input.style.backgroundColor = "", 800);
+    recomputeStandings();
+  } else {
+    alert("Fehler beim Speichern");
+  }
+}
+
+function parseScore(str) {
+  const m = str.match(/^(\d+)\s*[-:]\s*(\d+)$/);
+  if (!m) return null;
+  return { a: +m[1], b: +m[2] };
+}
+
+function recomputeStandings() {
+  const groups = ["g1","g2","g3","g4"];
+  const stats = {};
+  groups.forEach(g => stats[g] = {});
+
+  matches.forEach((m, i) => {
+    const val = document.getElementById(`result-${i}`).value.trim();
+    if (!val) return;
+
+    const s = parseScore(val);
+    if (!s) return;
+
+    const g = m.g;
+
+    if (!stats[g][m.a]) stats[g][m.a] = { p:m.a, g:0, w:0, l:0, pf:0, pa:0 };
+    if (!stats[g][m.b]) stats[g][m.b] = { p:m.b, g:0, w:0, l:0, pf:0, pa:0 };
+
+    stats[g][m.a].g++;
+    stats[g][m.b].g++;
+    stats[g][m.a].pf += s.a;
+    stats[g][m.a].pa += s.b;
+    stats[g][m.b].pf += s.b;
+    stats[g][m.b].pa += s.a;
+
+    if (s.a > s.b) {
+      stats[g][m.a].w++;
+      stats[g][m.b].l++;
+    } else {
+      stats[g][m.b].w++;
+      stats[g][m.a].l++;
+    }
+  });
+
+  groups.forEach(g => {
+    const tbody = document.getElementById(`table-${g}`);
+    tbody.innerHTML = "";
+
+    const players = Object.values(stats[g]);
+
+    players.sort((a,b)=>{
+      if (b.w !== a.w) return b.w - a.w;
+      const diffA = a.pf - a.pa;
+      const diffB = b.pf - b.pa;
+      if (diffB !== diffA) return diffB - diffA;
+      return b.pf - a.pf;
+    });
+
+    players.forEach(p=>{
+      tbody.innerHTML += `
+        <tr>
+          <td>${p.p}</td>
+          <td>${p.g}</td>
+          <td>${p.w}</td>
+          <td>${p.l}</td>
+          <td>${p.w}</td>
+          <td>${p.pf - p.pa}</td>
+        </tr>`;
+    });
+  });
+
+  const overall = [];
+
+  groups.forEach(g => {
+    Object.values(stats[g]).forEach(p => {
+      overall.push({
+        name: p.p,
+        group: g,
+        g: p.g,
+        w: p.w,
+        l: p.l,
+        diff: p.pf - p.pa,
+        pf: p.pf
+      });
+    });
+  });
+
+  overall.sort((a,b)=>{
+    if (b.w !== a.w) return b.w - a.w;
+    if (b.diff !== a.diff) return b.diff - a.diff;
+    return b.pf - a.pf;
+  });
+
+  const tbodyOverall = document.getElementById("table-overall");
+  tbodyOverall.innerHTML = "";
+
+  overall.forEach((p, i) => {
+    tbodyOverall.innerHTML += `
+      <tr class="${i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":""}">
+        <td>${i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1}</td>
+        <td>${p.name}</td>
+        <td>${p.group}</td>
+        <td>${p.g}</td>
+        <td>${p.w}</td>
+        <td>${p.l}</td>
+        <td>${p.diff}</td>
+      </tr>`;
+  });
+
+  buildKO(overall);
+}
+
+function buildKO(overall) {
+  const g1 = overall.filter(p => p.group === "g1")[0];
+  const g2 = overall.filter(p => p.group === "g2")[0];
+  const g3 = overall.filter(p => p.group === "g3")[0];
+  const g4 = overall.filter(p => p.group === "g4")[0];
+
+  document.getElementById("hf1-a").textContent = g1 ? g1.name : "–";
+  document.getElementById("hf1-b").textContent = g4 ? g4.name : "–";
+  document.getElementById("hf2-a").textContent = g2 ? g2.name : "–";
+  document.getElementById("hf2-b").textContent = g3 ? g3.name : "–";
+
+  updateFinals();
+}
+
+function updateFinals() {
+  const hf1 = parseScore(document.getElementById("hf1").value.trim());
+  const hf2 = parseScore(document.getElementById("hf2").value.trim());
+
+  const fA = document.getElementById("final-a");
+  const fB = document.getElementById("final-b");
+  const sA = document.getElementById("small-a");
+  const sB = document.getElementById("small-b");
+
+  fA.textContent = "–";
+  fB.textContent = "–";
+  sA.textContent = "–";
+  sB.textContent = "–";
+
+  let hf1Winner = null, hf1Loser = null;
+  if (hf1 && hf1.a !== hf1.b) {
+    const A = document.getElementById("hf1-a").textContent;
+    const B = document.getElementById("hf1-b").textContent;
+    hf1Winner = hf1.a > hf1.b ? A : B;
+    hf1Loser = hf1.a > hf1.b ? B : A;
+  }
+
+  let hf2Winner = null, hf2Loser = null;
+  if (hf2 && hf2.a !== hf2.b) {
+    const A = document.getElementById("hf2-a").textContent;
+    const B = document.getElementById("hf2-b").textContent;
+    hf2Winner = hf2.a > hf2.b ? A : B;
+    hf2Loser = hf2.a > hf2.b ? B : A;
+  }
+
+  if (hf1Winner && hf2Winner) {
+    fA.textContent = hf1Winner;
+    fB.textContent = hf2Winner;
+  }
+
+  if (hf1Loser && hf2Loser) {
+    sA.textContent = hf1Loser;
+    sB.textContent = hf2Loser;
+  }
+}
+
+function makeTableSortable(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const headers = table.querySelectorAll("th");
+
+  headers.forEach((th, index) => {
+    th.style.cursor = "pointer";
+    th.addEventListener("click", () => {
+      const rows = Array.from(table.querySelectorAll("tbody tr"));
+      const asc = th.classList.toggle("asc");
+
+      rows.sort((a, b) => {
+        const A = a.children[index].innerText;
+        const B = b.children[index].innerText;
+
+        const numA = parseFloat(A.replace(",", "."));
+        const numB = parseFloat(B.replace(",", "."));
+
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return asc ? numA - numB : numB - numA;
+        }
+        return asc ? A.localeCompare(B) : B.localeCompare(A);
+      });
+
+      rows.forEach(r => table.querySelector("tbody").appendChild(r));
+    });
+  });
+}
+
+window.onload = async () => {
+  buildMatchesTable();
+  document.getElementById("hf1").addEventListener("input", updateFinals);
+  document.getElementById("hf2").addEventListener("input", updateFinals);
+  await loadResults();
+  recomputeStandings();
+
+  makeTableSortable("matches-table");
+  makeTableSortable("table-g1");
+  makeTableSortable("table-g2");
+  makeTableSortable("table-g3");
+  makeTableSortable("table-g4");
+  makeTableSortable("table-overall-wrapper");
+};
+
+setInterval(async () => {
+  await loadResults();
+  recomputeStandings();
+}, 10000);
+</script>
+
+</body>
+</html>
