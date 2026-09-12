@@ -87,6 +87,16 @@
   .rank-2 { background: #dfe6e9; font-weight: bold; }
   .rank-3 { background: #fab1a0; font-weight: bold; }
 
+  .ko-round {
+    font-weight: bold;
+    color: var(--tsv-blue);
+  }
+
+  .ko-final {
+    background: #fff3bf !important;
+    font-weight: bold;
+  }
+
   .table-wrapper table tr:nth-child(even) {
     background: var(--tsv-grey);
   }
@@ -193,9 +203,39 @@
         <th>Spieler A</th>
         <th>Spieler B</th>
         <th>Ergebnis</th>
+        <th>Speichern</th>
       </tr>
     </thead>
-    <tbody id="ko-body"></tbody>
+    <tbody id="ko-body">
+      <tr>
+        <td class="ko-round">Halbfinale 1</td>
+        <td id="hf1-a">–</td>
+        <td id="hf1-b">–</td>
+        <td><input id="hf1" placeholder="13:8" inputmode="numeric"></td>
+        <td><button onclick="saveKOResult('hf1', 52)">Speichern</button></td>
+      </tr>
+      <tr>
+        <td class="ko-round">Halbfinale 2</td>
+        <td id="hf2-a">–</td>
+        <td id="hf2-b">–</td>
+        <td><input id="hf2" placeholder="13:8" inputmode="numeric"></td>
+        <td><button onclick="saveKOResult('hf2', 53)">Speichern</button></td>
+      </tr>
+      <tr class="ko-final">
+        <td class="ko-round">Finale</td>
+        <td id="final-a">–</td>
+        <td id="final-b">–</td>
+        <td><input id="final" placeholder="13:8" inputmode="numeric"></td>
+        <td><button onclick="saveKOResult('final', 54)">Speichern</button></td>
+      </tr>
+      <tr>
+        <td class="ko-round">Spiel um Platz 3</td>
+        <td id="small-a">–</td>
+        <td id="small-b">–</td>
+        <td><input id="small" placeholder="13:8" inputmode="numeric"></td>
+        <td><button onclick="saveKOResult('small', 55)">Speichern</button></td>
+      </tr>
+    </tbody>
   </table>
 </div>
 
@@ -304,6 +344,19 @@ async function loadResults() {
     const input = document.getElementById(`result-${i-1}`);
     if (input) input.value = result;
   }
+
+  const koRows = {
+    hf1: 52,
+    hf2: 53,
+    final: 54,
+    small: 55
+  };
+
+  Object.entries(koRows).forEach(([id, sheetRow]) => {
+    const input = document.getElementById(id);
+    const result = rows[sheetRow - 1]?.[3] || "";
+    if (input) input.value = result;
+  });
 }
 
 async function saveResult(index) {
@@ -315,6 +368,34 @@ async function saveResult(index) {
   }
 
   const row = index + 2;
+
+  const formData = new FormData();
+  formData.append("row", row);
+  formData.append("value", value);
+
+  const response = await fetch(SCRIPT_URL, {
+    method: "POST",
+    body: formData
+  });
+
+  if (response.ok) {
+    input.style.backgroundColor = "#c8f7c5";
+    setTimeout(() => input.style.backgroundColor = "", 800);
+    recomputeStandings();
+  } else {
+    alert("Fehler beim Speichern");
+  }
+}
+
+async function saveKOResult(inputId, row) {
+  const input = document.getElementById(inputId);
+  const value = input.value.trim();
+  const score = parseScore(value);
+
+  if (!score || score.a === score.b) {
+    alert("Bitte ein eindeutiges Ergebnis eintragen, zum Beispiel 13:8.");
+    return;
+  }
 
   const formData = new FormData();
   formData.append("row", row);
@@ -442,86 +523,58 @@ function recomputeStandings() {
 }
 
 function buildKO(overall) {
-  const ko = document.getElementById("ko-body");
-  ko.innerHTML = "";
-
   const g1 = overall.filter(p => p.group === "g1")[0];
   const g2 = overall.filter(p => p.group === "g2")[0];
   const g3 = overall.filter(p => p.group === "g3")[0];
   const g4 = overall.filter(p => p.group === "g4")[0];
 
-  ko.innerHTML += `
-    <tr>
-      <td>Halbfinale 1</td>
-      <td id="hf1-a">${g1 ? g1.name : "-"}</td>
-      <td id="hf1-b">${g4 ? g4.name : "-"}</td>
-      <td><input id="hf1" placeholder=""></td>
-    </tr>
-    <tr>
-      <td>Halbfinale 2</td>
-      <td id="hf2-a">${g2 ? g2.name : "-"}</td>
-      <td id="hf2-b">${g3 ? g3.name : "-"}</td>
-      <td><input id="hf2" placeholder=""></td>
-    </tr>
-    <tr>
-      <td>Finale</td>
-      <td id="final-a">–</td>
-      <td id="final-b">–</td>
-      <td><input id="final" placeholder=""></td>
-    </tr>
-    <tr>
-      <td>Spiel um Platz 3</td>
-      <td id="small-a">–</td>
-      <td id="small-b">–</td>
-      <td><input id="small" placeholder=""></td>
-    </tr>
-  `;
+  document.getElementById("hf1-a").textContent = g1 ? g1.name : "–";
+  document.getElementById("hf1-b").textContent = g4 ? g4.name : "–";
+  document.getElementById("hf2-a").textContent = g2 ? g2.name : "–";
+  document.getElementById("hf2-b").textContent = g3 ? g3.name : "–";
 
-  function updateFinals() {
-    const hf1 = document.getElementById("hf1").value.trim();
-    const hf2 = document.getElementById("hf2").value.trim();
+  updateFinals();
+}
 
-    const fA = document.getElementById("final-a");
-    const fB = document.getElementById("final-b");
-    const sA = document.getElementById("small-a");
-    const sB = document.getElementById("small-b");
+function updateFinals() {
+  const hf1 = parseScore(document.getElementById("hf1").value.trim());
+  const hf2 = parseScore(document.getElementById("hf2").value.trim());
 
-    fA.textContent = "–";
-    fB.textContent = "–";
-    sA.textContent = "–";
-    sB.textContent = "–";
+  const fA = document.getElementById("final-a");
+  const fB = document.getElementById("final-b");
+  const sA = document.getElementById("small-a");
+  const sB = document.getElementById("small-b");
 
-    let hf1Winner = null, hf1Loser = null;
-    if (/^\d+\s*[-:]\s*\d+$/.test(hf1)) {
-      const [a, b] = hf1.split(/[-:]/).map(x => +x.trim());
-      const A = document.getElementById("hf1-a").textContent;
-      const B = document.getElementById("hf1-b").textContent;
-      hf1Winner = a > b ? A : B;
-      hf1Loser  = a > b ? B : A;
-    }
+  fA.textContent = "–";
+  fB.textContent = "–";
+  sA.textContent = "–";
+  sB.textContent = "–";
 
-    let hf2Winner = null, hf2Loser = null;
-    if (/^\d+\s*[-:]\s*\d+$/.test(hf2)) {
-      const [a, b] = hf2.split(/[-:]/).map(x => +x.trim());
-      const A = document.getElementById("hf2-a").textContent;
-      const B = document.getElementById("hf2-b").textContent;
-      hf2Winner = a > b ? A : B;
-      hf2Loser  = a > b ? B : A;
-    }
-
-    if (hf1Winner && hf2Winner) {
-      fA.textContent = hf1Winner;
-      fB.textContent = hf2Winner;
-    }
-
-    if (hf1Loser && hf2Loser) {
-      sA.textContent = hf1Loser;
-      sB.textContent = hf2Loser;
-    }
+  let hf1Winner = null, hf1Loser = null;
+  if (hf1 && hf1.a !== hf1.b) {
+    const A = document.getElementById("hf1-a").textContent;
+    const B = document.getElementById("hf1-b").textContent;
+    hf1Winner = hf1.a > hf1.b ? A : B;
+    hf1Loser = hf1.a > hf1.b ? B : A;
   }
 
-  document.getElementById("hf1").addEventListener("input", updateFinals);
-  document.getElementById("hf2").addEventListener("input", updateFinals);
+  let hf2Winner = null, hf2Loser = null;
+  if (hf2 && hf2.a !== hf2.b) {
+    const A = document.getElementById("hf2-a").textContent;
+    const B = document.getElementById("hf2-b").textContent;
+    hf2Winner = hf2.a > hf2.b ? A : B;
+    hf2Loser = hf2.a > hf2.b ? B : A;
+  }
+
+  if (hf1Winner && hf2Winner) {
+    fA.textContent = hf1Winner;
+    fB.textContent = hf2Winner;
+  }
+
+  if (hf1Loser && hf2Loser) {
+    sA.textContent = hf1Loser;
+    sB.textContent = hf2Loser;
+  }
 }
 
 function makeTableSortable(tableId) {
@@ -555,6 +608,8 @@ function makeTableSortable(tableId) {
 
 window.onload = async () => {
   buildMatchesTable();
+  document.getElementById("hf1").addEventListener("input", updateFinals);
+  document.getElementById("hf2").addEventListener("input", updateFinals);
   await loadResults();
   recomputeStandings();
 
