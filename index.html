@@ -97,6 +97,26 @@
     font-weight: bold;
   }
 
+  #ko-table { min-width: 0; }
+  #ko-table input { width: 76px; }
+  #ko-table .ko-save {
+    display: inline-block !important;
+    min-width: 92px;
+    white-space: nowrap;
+  }
+  #ko-save-status {
+    min-height: 20px;
+    margin: 8px 4px 4px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #146c2e;
+  }
+  @media (max-width: 620px) {
+    #ko-table th, #ko-table td { padding: 5px 3px; font-size: 11px; }
+    #ko-table .ko-save { min-width: 72px; padding: 6px 4px; font-size: 11px; }
+  }
+
   .table-wrapper table tr:nth-child(even) {
     background: var(--tsv-grey);
   }
@@ -212,31 +232,32 @@
         <td id="hf1-a">–</td>
         <td id="hf1-b">–</td>
         <td><input id="hf1" placeholder="13:8" inputmode="numeric"></td>
-        <td><button onclick="saveKOResult('hf1', 52)">Speichern</button></td>
+        <td><button class="ko-save" onclick="saveKOResult('hf1', 52, this)">Speichern</button></td>
       </tr>
       <tr>
         <td class="ko-round">Halbfinale 2</td>
         <td id="hf2-a">–</td>
         <td id="hf2-b">–</td>
         <td><input id="hf2" placeholder="13:8" inputmode="numeric"></td>
-        <td><button onclick="saveKOResult('hf2', 53)">Speichern</button></td>
+        <td><button class="ko-save" onclick="saveKOResult('hf2', 53, this)">Speichern</button></td>
       </tr>
       <tr class="ko-final">
         <td class="ko-round">Finale</td>
         <td id="final-a">–</td>
         <td id="final-b">–</td>
         <td><input id="final" placeholder="13:8" inputmode="numeric"></td>
-        <td><button onclick="saveKOResult('final', 54)">Speichern</button></td>
+        <td><button class="ko-save" onclick="saveKOResult('final', 54, this)">Speichern</button></td>
       </tr>
       <tr>
         <td class="ko-round">Spiel um Platz 3</td>
         <td id="small-a">–</td>
         <td id="small-b">–</td>
         <td><input id="small" placeholder="13:8" inputmode="numeric"></td>
-        <td><button onclick="saveKOResult('small', 55)">Speichern</button></td>
+        <td><button class="ko-save" onclick="saveKOResult('small', 55, this)">Speichern</button></td>
       </tr>
     </tbody>
   </table>
+  <div id="ko-save-status" role="status" aria-live="polite"></div>
 </div>
 
 <script>
@@ -354,8 +375,10 @@ async function loadResults() {
 
   Object.entries(koRows).forEach(([id, sheetRow]) => {
     const input = document.getElementById(id);
-    const result = rows[sheetRow - 1]?.[3] || "";
-    if (input) input.value = result;
+    const remoteResult = rows[sheetRow - 1]?.[3] || "";
+    const localResult = localStorage.getItem(`boule-ko-${id}`) || "";
+    if (input) input.value = remoteResult || localResult;
+    if (remoteResult) localStorage.setItem(`boule-ko-${id}`, remoteResult);
   });
 }
 
@@ -387,8 +410,9 @@ async function saveResult(index) {
   }
 }
 
-async function saveKOResult(inputId, row) {
+async function saveKOResult(inputId, row, button) {
   const input = document.getElementById(inputId);
+  const status = document.getElementById("ko-save-status");
   const value = input.value.trim();
   const score = parseScore(value);
 
@@ -401,17 +425,31 @@ async function saveKOResult(inputId, row) {
   formData.append("row", row);
   formData.append("value", value);
 
-  const response = await fetch(SCRIPT_URL, {
-    method: "POST",
-    body: formData
-  });
+  localStorage.setItem(`boule-ko-${inputId}`, value);
+  button.disabled = true;
+  button.textContent = "Speichert …";
+  status.textContent = "";
 
-  if (response.ok) {
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: formData,
+      mode: "no-cors"
+    });
+
+    if (!response.ok && response.type !== "opaque") {
+      throw new Error("Speichern fehlgeschlagen");
+    }
+
     input.style.backgroundColor = "#c8f7c5";
     setTimeout(() => input.style.backgroundColor = "", 800);
+    status.textContent = "Ergebnis wurde gespeichert.";
     recomputeStandings();
-  } else {
-    alert("Fehler beim Speichern");
+  } catch (error) {
+    status.textContent = "Online-Speicherung nicht erreichbar – Ergebnis wurde auf diesem Gerät gesichert.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Speichern";
   }
 }
 
